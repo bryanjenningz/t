@@ -3,29 +3,30 @@ A simple function that verifies the arguments and return values of a function sa
 
 ## Examples
 
+Let's say you have a function called `add` and you want to make sure its 2 arguments are both numbers and you want to make sure that its return value is also a number. Here's how you would do that.
+
 ```javascript
 const isNumber = arg => typeof arg === "number";
 
-// The t(isNumber, isNumber, isNumber) part are the condition functions.
-// The first 2 isNumber functions are for the 2 arguments.
-// The last isNumber function is for the return value.
 const add = t(isNumber, isNumber, isNumber)(
   (a, b) => a + b
 );
 
 console.log(add(1, 2)); // 3
 
-// Throws an error because a string was passed in and isNumber("1") returns false.
-console.log(add("1", 2)); 
+console.log(add("1", 2)); // throws an error because "1" is a string, not a number
+```
 
-// You can also write more complex conditions
-// Here's a square-root function that only accepts positive numbers
+The cool thing about using condition functions is that you can compose them and create more complex condition functions.
 
-const isPositive = x => isNumber(x) && x >= 0;
+Here's a square-root function that accepts a positive number and returns a positive number.
 
-// We're saying that sqrt is a function that takes a positive number
-// and returns a positive number.
-const sqrt = t(isPositive, isPositive)(x => {
+```javascript
+const isPositive = x => x >= 0;
+const isInt = x => x % 1 === 0;
+const isPositiveInt = x => isPositive(x) && isInt(x);
+
+const sqrt = t(isPositiveInt, isPositive)(x => {
   const tolerance = 0.0000000001 * x;
   const isGoodEnough = guess => Math.abs(guess * guess - x) < tolerance;
   const improve = guess => isGoodEnough(guess) ? guess : improve((guess + x / guess) / 2);
@@ -33,5 +34,17 @@ const sqrt = t(isPositive, isPositive)(x => {
 });
 
 console.log(sqrt(9)); // 3
-console.log(sqrt(-9)); // throws error because -9 is not a positive number
+console.log(sqrt(-9)); // throws error because -9 is not positive
+console.log(sqrt(1.01)); // throws error because 1.01 is not an integer
+```
+
+You can even use your functions as condition functions to other functions (this example is probably not very practical, but it's definitely cool to think about how you can make your arguments and return values satisfy some interesting conditions).
+
+```javascript
+const hasIntSqrt = x => isInt(sqrt(x));
+const square = t(isInt, hasIntSqrt)(
+  x => x * x
+);
+
+console.log(square(4)); // 16
 ```
